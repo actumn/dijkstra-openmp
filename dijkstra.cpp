@@ -153,24 +153,44 @@ int dijsktra(const int source, const int target, char** path, int* pass_through,
 		prev[i] = graph[source][i] == 0 || graph[source][i] == MAX ? -1 : source; 
 	}
 	int* selected = (int*)calloc(NODE, sizeof(int));
+	selected[source] = 1;
 
 
 	// ** algorithm **
-	selected[source] = 1;
+	int* min_array = (int*) malloc(thread_count * sizeof(int));
+	int* waypoint_array = (int*) calloc(thread_count, sizeof(int));
+	for (int i = 0; i < thread_count; i++) {
+		min_array[i] = MAX + 2;
+	}
+	int min; // for excaping loop
+	int waypoint = 0;
 	while(selected[target] == 0) {
-		int min = MAX + 1; // for excaping loop
-		int waypoint = 0;
+		min = MAX + 1;
+		for (int i = 0; i < thread_count; i++) {
+			min_array[i] = MAX + 2;
+		}
 
 		#pragma omp parallel 
 		{
+			int thread_id = omp_get_thread_num();
 			#pragma omp for 
 			for (int i = 0; i < NODE; i++) {
-				if (selected[i] == 0 && dist[i] < min) {
-					min = dist[i];
-					waypoint = i;
+				if (selected[i] == 0 && dist[i] < min_array[thread_id]) {
+					min_array[thread_id] = dist[i];
+					waypoint_array[thread_id] = i;
 				}
 			}
-			selected[waypoint] = 1;
+			#pragma omp single
+			{
+				for(int i = 0; i < thread_count; i++) {
+					if (min_array[i] < min) {
+						min = min_array[i];
+						waypoint = waypoint_array[i];
+					}
+				}
+				selected[waypoint] = 1;
+			}
+			
 			#pragma omp for
 			for (int i = 0; i < NODE; i++) {
 				int distance = min + graph[waypoint][i];
@@ -181,6 +201,8 @@ int dijsktra(const int source, const int target, char** path, int* pass_through,
 			}
 		}
 	}
+	free(min_array);
+	free(waypoint_array);
 
 
 

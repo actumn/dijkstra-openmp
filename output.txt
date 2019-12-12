@@ -1,8 +1,0 @@
-param: mapDist4.csv 4 1 1 2
-n0001 n0002 
-Shortest Path: 60 Compute time: 0.10867 ms
-
-param: mapDist4-2.csv 4 1 0 3
-n0000 n0002 n0001 n0003 
-Shortest Path: 27 Compute time: 0.12599 ms
-
